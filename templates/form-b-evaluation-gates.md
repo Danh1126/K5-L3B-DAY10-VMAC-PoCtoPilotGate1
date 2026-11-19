@@ -253,11 +253,11 @@ Bốn lăng kính (bắt buộc đủ cả bốn; dự án AI hay chết ở ba 
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được hôm nay? (trace / data / config nào) | Thành cổng phòng ngừa nào (code hay config) / hay vào risk register |
 |---|---|---|---|
-| Trợ lý đã tin số ngày trễ khách tự khai hơn tracking, rồi hoàn tiền và ghi lỗi oan cho hãng; nhóm phải dừng pilot để đối soát. | Kỹ thuật | `T-002@55`: `tracking=2`, `model_override=5`, `issue_refund=20.000đ`, `file_carrier_fault=VNX`; report base có hoàn sai 20.000đ và 1 lỗi oan. | **Đề xuất để cả bàn chọn:** cổng trước lệnh ghi đối chiếu ngày trễ/quyền lợi với DB và chính sách; khi mâu thuẫn, chuyển người, tránh cả khoản chi lẫn lỗi hãng. |
-| | Kinh doanh | | |
-| | Con người và vận hành | | |
-| Nội dung ticket/địa chỉ liên hệ của người nhận đã bị chép vào thông báo cho hãng mà không được phép; một vụ khiếu nại PII buộc dừng pilot. | Pháp lý | Trace base có `notify_carrier.payload.customer_note`; agent cũng có nhánh `recipient_contact` cho đơn quà tặng. `carrier_notice_fields` trong chính sách chỉ gồm `order_id`, `parcel_id`, `district`, `delay_days`. | Cổng `write_gate` trước `notify_carrier` chỉ giữ các trường được chính sách cho phép; báo cho vai pháp lý xác nhận cách xử lý dữ liệu bên thứ ba. |
-| | | | |
+| Trợ lý đã tin số ngày trễ khách tự khai hơn tracking, rồi hoàn tiền và ghi lỗi oan cho hãng; nhóm phải dừng pilot để đối soát. | Kỹ thuật | `T-002@55`: `tracking=2`, `model_override=5`, `issue_refund=20.000đ`, `file_carrier_fault=VNX`; report base có hoàn sai 20.000đ và 1 lỗi oan. | **Cổng phòng ngừa 1 (Code `guards.py`):** Cổng `write_gate` trước lệnh ghi đối chiếu ngày trễ/quyền lợi với DB và chính sách; khi mâu thuẫn, chuyển người, tránh cả khoản chi lẫn lỗi hãng. |
+| Trợ lý đã tự động hoàn tiền vượt trần ngân sách ngày và xử lý cả đơn sỉ giá trị lớn (`HCM-B2B`) chưa qua kiểm soát, khiến chi phí/ca vượt làm tay (`10.000đ`) và âm ngân sách Finance. | Kinh doanh | `data/world.json` → `ops_limits.daily_auto_refund_budget_vnd = 2.000.000đ`, `max_auto_refund_per_customer_per_day_vnd = 300.000đ`, `warehouses` có kho `HCM-B2B` đơn từ 2 triệu; `ops_facts.manual_cost_per_ticket_vnd = 10.000đ`[cite: 3]. | **Cổng phòng ngừa 2 (Config `operating_gates.json` + Code):** Giới hạn `pilot_scope` chỉ chạy ở 2 depot đơn lẻ (loại trừ `HCM-B2B`), khóa `daily_refund_cap_vnd` và chặn khoản hoàn vượt hạn mức chính sách. |
+| Vào giờ cao điểm, lượng ticket đẩy duyệt (`escalate`) tăng vọt vượt công suất `6 ca/giờ` của `1` người trực (`NV-HANH`), làm hàng chờ ùn quá SLA 60 phút; đồng thời nhân viên CSKH không tin quyết định tự động nên tự kiểm lại bằng tay hết, làm mất hoàn toàn hiệu quả tiết kiệm công. | Con người và vận hành | `data/world.json` → `ops_facts`: `default_reviewers_on_shift = 1`, `review_capacity_per_reviewer_per_hour = 6` (10 phút/ca)[cite: 3]; `ops_limits.review_sla_minutes = 60`[cite: 3]; `staff_behavior.trust_conditions` yêu cầu `decision_note: true` và `min_sampling_pct: 10`[cite: 3]. | **Cổng phòng ngừa 3 (Config `operating_gates.json`):** Bố trí tăng người trực giờ cao điểm (`reviewers_on_shift`), đặt ngưỡng `max_queue_wait_minutes = 60`, bật bắt buộc `decision_note` và tỷ lệ kiểm mẫu tối thiểu `10%` để CSKH tin tưởng. |
+| Nội dung ticket/địa chỉ liên hệ của người nhận đã bị chép vào thông báo cho hãng mà không được phép; một vụ khiếu nại PII buộc dừng pilot. | Pháp lý | Trace base có `notify_carrier.payload.customer_note`; agent cũng có nhánh `recipient_contact` cho đơn quà tặng (`is_gift: true` như `O-1024`, `O-1026`[cite: 3]). `carrier_notice_fields` trong chính sách chỉ gồm `order_id`, `parcel_id`, `district`, `delay_days`[cite: 3]. | **Cổng phòng ngừa 4 (Code `guards.py` + Config `legal`):** Cổng `write_gate` trước `notify_carrier` lọc chỉ giữ các trường trong `carrier_notice_fields`, chặn `pii_fields_blocked_to_third_party` (`name`, `phone`, `street`, `customer_note`). |
+| Trợ lý đã hoàn tiền lặp lại cho đơn hàng đã được hoàn trước đó (`refund_status: "REFUNDED"`) hoặc phạt hãng vận chuyển vượt quá 2 lần/ngày, khiến kế toán đối soát (`NV-OANH`) lệch sổ cái và đối tác vận chuyển (`GHSH`, `DNB`) bị đình chỉ oan. | Kỹ thuật & Pháp lý | `data/world.json` → `orders` có `O-1017` (`refund_status: "REFUNDED"`, đã có trong `ledger_seed` `T-OLD-1017`)[cite: 3]; `ops_limits.max_auto_strikes_per_carrier_per_day = 2`[cite: 3]; `carriers` quy định `suspend_after_strikes_7d = 3` với `GHSH` và `DNB`[cite: 3]. | **Đưa vào Risk register + Code `guards.py`:** Chặn `issue_refund` nếu `order.refund_status == "REFUNDED"` (idempotency — FM-07[cite: 1]) và chuyển duyệt nếu hãng chạm ngưỡng `2` strike/ngày. |
 
 ---
 
@@ -310,10 +310,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
-| `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.daily_refund_cap_vnd` | 1500000 (hoặc 2000000) | Đặt trần hoàn tiền tự động 1.500.000đ/ngày để nằm an toàn dưới ngân sách tối đa daily_auto_refund_budget_vnd 2.000.000đ đã thống nhất với Finance trong ops_limits|
+| `business.cost_budget_per_ticket_vnd` | 8000 | Giới hạn ngân sách vận hành tối đa 8.000đ/ticket (bao gồm trần phí LLM max_llm_cost_per_ticket_vnd 1.500đ và chi phí chuyển duyệt 10.000đ/ca) để đảm bảo rẻ hơn mức làm tay manual_cost_per_ticket_vnd 10.000đ|
+| `business.pilot_scope` (all / warehouse / percent) | {"mode": "warehouse", "warehouses": ["HN", "HCM"], "percent": 100} | Giới hạn chạy thử nghiệm ở 2 depot đơn lẻ chính là Hà Nội (HN) và TP.HCM (HCM), loại trừ kho sỉ HCM-B2B có giá trị đơn từ 2.000.000đ để kiểm soát rủi ro tài chính đúng phạm vi Gate 1. |
+| `business.roi_min` | 0.25 | Yêu cầu tỷ suất hoàn vốn tối thiểu 25% (0.25) so với quy trình làm tay 10.000đ/ticket để bù đắp chi phí giữ chỗ nhân sự trực duyệt 30.000đ/ca và đảm bảo hiệu quả kinh tế khi mở rộng |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
