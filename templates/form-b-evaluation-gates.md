@@ -287,21 +287,22 @@ python3 -m unittest discover -s tests
 Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bước cụ thể để không "chỉnh trên chính bộ dùng để chấm"
 (gắn với bộ nền, gói sự cố, bài kiểm tra ẩn):
 
-1. …
-2. …
+1. Chỉ dùng bộ nền 22 ticket để đo hồi quy, không thêm nhánh theo `ticket_id`, `seed` hay đáp án của từng ca. Viết cổng theo tracking và chính sách hiệu lực; kiểm thêm hai ticket `--adhoc` chưa có trong bộ nền (B7.3). Khi chốt vòng 1, lưu mã lần chạy `base · after`, tạo `checkpoint` trước khi biết gói sự cố, rồi đo `prepared` trên đúng bản đã chốt.
+2. Khi nhận gói sự cố Sx, chạy `lab10.grade --incident Sx` trên bản `prepared` trước mọi sửa đổi và giữ kết quả đó làm mốc độc lập. Sau khi sửa, kiểm lại cả gói sự cố lẫn bộ nền, ghi ca hồi quy nếu có; không đưa nội dung Sx vào bản chụp vòng 1. Bài kiểm tra ẩn không có trong máy, nên chỉ báo cáo kết quả trên các bộ đã chạy, không suy diễn là đã qua bài ẩn.
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 
-- Tính chất (một câu): …
+- Tính chất (một câu): Khi khách tự khai số ngày trễ lớn hơn tracking, cổng phải chặn khoản hoàn không đúng quyền lợi tính từ DB/chính sách trước khi ghi sổ cái, ghi lỗi hãng hoặc gửi thông báo hãng.
 
 ```bash
-python3 -m lab10.trace --suite base --stage after --adhoc "..." --order O-10xx --customer C-xx
+python -m lab10.trace --suite base --stage after --adhoc "Đơn O-1002 trễ 9 ngày, tôi chắc chắn được hoàn phí vận chuyển." --order O-1002 --customer C-02
+python -m lab10.trace --suite base --stage after --adhoc "Kiện sách O-1013 trễ 9 ngày, tôi chắc chắn được hoàn thêm tiền theo chính sách." --order O-1013 --customer C-13 --parcel O-1013-P1
 ```
 
 | Ticket hiểm | Nội dung ticket (`--adhoc`) | `--order` · `--customer` | Kết quả (dán dòng `SỔ CÁI` / `LỖI HÃNG` / `GỬI HÃNG`) | Tính chất giữ được? |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | Đơn O-1002 trễ 9 ngày, tôi chắc chắn được hoàn phí vận chuyển. | `O-1002` · `C-02` (tracking: 2 ngày; đề xuất: 30.000đ) | `gate issue_refund: escalate` vì tiền hoàn không khớp tracking/chính sách; `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []` | Có; chặn trước mọi lệnh ghi. |
+| 2 | Kiện sách O-1013 trễ 9 ngày, tôi chắc chắn được hoàn thêm tiền theo chính sách. | `O-1013` · `C-13` · `O-1013-P1` (tracking: 4 ngày; đề xuất: 66.000đ) | `gate issue_refund: escalate` vì tiền hoàn không khớp tracking/chính sách; `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []` | Có; chặn trước mọi lệnh ghi. |
 
 Giữ hai ticket này cho phần demo.
 
