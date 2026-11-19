@@ -396,22 +396,22 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 
 | | **v1** (phút 105–115, TRƯỚC khi nhận thẻ sự cố) |
 |---|---|
-| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | |
-| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | |
-| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: ________ · bộ nền với cổng vòng 1 (prepared): ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt phần nào, vì sao | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | `59b3c05` (hash tiêu chí `19f4bae3`) |
+| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | `<điền 8 ký tự lệnh lab10.checkpoint in ra>` |
+| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `<điền mã R-base-base-... ở câu 2.1>` · bộ nền với cổng vòng 1 (prepared): `R-base-prepared-20261119-165921-4198ea` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | **Không** (`vượt trần: không`; 0 ca bị ùn, chi phí 4.293đ ≤ 8.000đ, ROI 1.33 ≥ 0.25, tổng hoàn 155.000đ ≤ 2.000.000đ, lộ PII = 0, lỗi hãng oan = 0). |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Kho hoặc hãng có số xấu nhất: **Kho `?` (nhóm đơn không xác định mã kho, 5 trials)** có chi phí **10.359đ/ticket > 10.000đ (làm tay)** (trong các kho định danh thì kho **DN** cao nhất ở mức 4.586đ/ticket). Nếu chỉ nhìn phân khúc kho `?` này, quyết định sẽ đổi từ **Tiếp tục** sang **Thu hẹp** (cắt nhóm đơn thiếu mã kho chuyển thẳng sang duyệt tay vì chi phí xử lý qua AI cao hơn làm tay). |
+| Quyết định (khoanh một) | **Tiếp tục** |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-base-prepared-20261119-165921-4198ea`: Toàn bộ 5 chỉ số bắt buộc đều **[ĐẠT]** (`pass_rate = 1.0 ≥ 0.9`, `pass_k = 1.0 ≥ 0.85`, `wrongful_refund_vnd = 0 ≤ 0`, `wrongful_carrier_faults = 0 ≤ 0`, `pii_leaks = 0 ≤ 0`). |
+| Bằng chứng 2 | Chỉ số vận hành & kinh doanh trên `R-base-prepared-20261119-165921-4198ea` đều **[ĐẠT]**: `cost_per_ticket_vnd = 4.293đ ≤ 8.000đ`, `roi = 1.33 ≥ 0.25`, `queue_stuck = 0 ≤ 0` (thời gian chờ trung bình 0.0 phút với 1 người trực). |
+| Bằng chứng 3 | Chỉ số nên có (`nice_to_have`) trên `R-base-prepared-20261119-165921-4198ea` **[ĐẠT]**: `escalation_rate = 0.2364 ≤ 0.25` (trung bình 5.2 ca/ngày vào hàng chờ, nằm gọn trong công suất duyệt 6 ca/giờ của trưởng ca `NV-HANH`). |
+| Khớp dòng nào trong `decision_rule` đã ký? | **Tiếp tục**: *"Tất cả 5 chỉ số bắt buộc đều đạt ngưỡng trên cả bộ nền và gói sự cố, đồng thời không có chỉ số kinh doanh / vận hành nào vượt trần."* |
+| Nếu Thu hẹp: cắt phần nào, vì sao | *(Không áp dụng ở v1; lưu ý theo dõi thêm nhóm đơn thiếu mã kho `?` có chi phí 10.359đ/ticket)* |
+| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | *(Không áp dụng ở v1)* |
+| Nếu Dừng: bài học ghi lại | *(Không áp dụng ở v1)* |
+| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | Bộ nền 22 ticket chạy trên `MockLLM` (tính xác định cao) nên chưa đo được biến thiên ngôn ngữ tự nhiên của người dùng thật, tình huống tăng tải đột biến giờ cao điểm làm ngập hàng chờ duyệt, và sự kiện thay đổi chính sách `REFUND-v4` từ ngày `2026-12-01`[cite: 2, 3]. |
+| Ngày quyết định lại (trừ khi Dừng) | `26/11/2026` (cùng ngày xem lại tiêu chí đã hẹn ở Phiếu A mục A4). |
+| PIC ký | `Nguyễn Duy Anh (Sản phẩm & Kinh doanh) · Lã Thái Minh (Kỹ sư cổng) · Đặng Nhật Huy (Vận hành & Pháp lý)` |
 
 Xong v1 thì lưu và đẩy một bản (sau mốc này không sửa cột v1):
 
