@@ -364,7 +364,7 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Rủi ro | Khả năng | Tác động | Người phụ trách (PIC, một người) | Dấu hiệu (metric nào, ngưỡng nào) | Xử lý | Ảnh hưởng bước đánh giá | Nhóm chức năng (GOVERN / MAP / MEASURE / MANAGE) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| Hãng hoặc người nhận bị lộ thông tin cá nhân qua một trường mới mà allowlist chưa biết (như `recipient_contact` trong S7) | Trung bình | Cao: lộ dữ liệu bên thứ ba, khiếu nại pháp chế | Lã Thái Minh (Kỹ sư cổng) | `pii_leaks` > 0 trong report; chỉ số `carrier_extra_fields` (C8, chưa có) > 0 | Dừng `notify_carrier` (switch), thêm trường vào allowlist sau khi pháp chế duyệt | Cần đo `pii_leaks` trên bộ ticket lớn hơn trước pilot; hiện chỉ 22 ticket | MEASURE |
 
 Quy tắc: **mỗi dòng phải đổi được một quyết định.** Cột "Dấu hiệu" phải là một metric có trong `monitors.py` hoặc trong report.
 
@@ -380,26 +380,26 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 
 | # nhóm | Trạng thái mới (Xong / Chưa / Không áp dụng) | Bằng chứng mới (mã lần chạy, mục phiếu, số trong report) | PIC |
 |---|---|---|---|
-| | | | |
-| | | | |
+| 4 · Quyền hạn | Xong | `write_gate` cho `notify_carrier` (allowlist), mã lần chạy `R-S7-grade-20261119-172132-b3dc2e`, `pii_leaks` 0 ở after | Đặng Nhật Huy |
+| 8 · Con người, pháp lý | Chưa | Cần pháp chế xác nhận căn cứ pháp lý (thẻ ghi "cần kiểm"); `legal.pii_fields_blocked_to_third_party` đã đặt `customer_note`, `recipient_contact` | Đặng Nhật Huy |
 
 ### Runbook 4 · Sau sự cố trên thẻ (vòng 2)
 
 | Câu hỏi | Trả lời |
 |---|---|
-| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | |
-| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | |
-| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | |
-| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | |
-| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | |
-| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | |
-| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | |
+| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | Không có tín hiệu nào trong Runbook 2 đo việc lộ trường cá nhân. Chỉ `pii_leaks` có trong report, và nó chỉ được đo khi chạy đánh giá. Chưa có tín hiệu theo thời gian thực. |
+| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | Thêm `legal.pii_fields_blocked_to_third_party` = `customer_note`, `recipient_contact`. Bật `carrier_fault_requires_recorded_cause` = true (trước là false). Không đổi số tiền. |
+| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | Không đổi số người trực (1). NV-OANH được gọi khi có khiếu nại bên thứ ba. |
+| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | Quy trình: `notify_carrier` chỉ gửi bốn trường trong `carrier_notice_fields`. Ghi chú tự do của khách không gửi cho hãng. |
+| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | Với người nhận quà bị lộ (S7-20, S7-21 trong gói bằng chứng): NV-OANH liên hệ hãng để yêu cầu xóa dữ liệu; thời hạn do pháp chế xác định. Chưa có thời hạn cụ thể. |
+| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | Tên và SĐT người nhận đã gửi cho hãng trong mốc base. Trong mốc after không còn lộ. Báo cho pháp chế và NV-HANH. |
+| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | Lộ ra qua đọc nội dung thẻ của pháp chế (email KHẨN), không qua chỉ số. Bàn chưa có nguồn phản hồi tự động từ hãng. |
 
 ### Runbook 5 · Ba kịch bản "nếu … thì …" cho tuần đầu chạy thử thật
 
-1. Nếu số ticket tăng gấp ___ lần trong một giờ thì: …
-2. Nếu nhà cung cấp LLM lỗi quá ___ phút thì: …
-3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: …
+1. Nếu số ticket tăng gấp 3 lần trong một giờ thì: một người duyệt chỉ xử lý được 6 ca mỗi giờ (`ops_facts`), hàng chờ quá 60 phút thì dừng nhận ticket mới (stop condition), NV-TUNG gọi thêm người.
+2. Nếu nhà cung cấp LLM lỗi quá 15 phút thì: trợ lý không trả lời, ticket về hàng chờ người duyệt xử lý tay (chi phí làm tay 10.000đ/ticket). Đề xuất 15 phút là giả định, cần nhóm chốt.
+3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: NV-HANH ghi lại ticket và lý do, giữ quyết định ở trạng thái chờ, NV-TUNG xem trace; nếu lặp lại thì tắt thao tác ghi liên quan.
 
 ---
 
@@ -415,11 +415,11 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 |---|---|
 | Commit ký tiêu chí | phải giống v1 |
 | Hash chốt cổng vòng 1 | phải giống v1 |
-| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: ________ · prepared: ________ · after: ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
+| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: `R-S7-before-20261119-172133-b3dc2e` · prepared: `R-S7-prepared-20261119-172133-b3dc2e` · after: `R-S7-after-20261119-172133-b3dc2e` |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Đề xuất: không. Monitor mới (C8) chưa có, nên không đo được việc trần tăng sau khi thẻ đổi. Cần kiểm lại sau khi thêm monitor. |
 | Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
+| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · **Cải tiến thêm** (đề xuất, nhóm chốt) · Dừng |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-S7-grade-20261119-172132-b3dc2e`: integrity ✅, criteria ✅, visible ✅, regression ✅; monitor ❌ (chưa có chỉ số mới) |
 | Bằng chứng 2 | |
 | Bằng chứng 3 | |
 | Khớp dòng nào trong `decision_rule` đã ký? | |
@@ -430,7 +430,7 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 | PIC ký | |
 
 **Chỉ ở v2**
-- Quyết định đổi hay giữ so với v1? Vì con số nào: …
+- Quyết định đổi hay giữ so với v1? Vì con số nào: đổi từ Tiếp tục (v1) sang Cải tiến thêm (v2). Lý do: thẻ S7 cho thấy lộ dữ liệu cá nhân mà v1 chưa đo; monitor mới chưa có để kiểm chứng sau sửa.
 - Report tự kiểm tra: mã lần chạy `__________` · ô nào còn đỏ (nguyên nhân × tầng): …
 - Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: …
 - Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: …

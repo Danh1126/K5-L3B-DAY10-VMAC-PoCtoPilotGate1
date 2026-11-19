@@ -1,12 +1,16 @@
 {
-  "team": "",
-  "members": [],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "team": "K5-L3B-DAY10-VMAC-PoCtoPilotGate1",
+  "members": [
+    "NguyenDuyAnh-2A202603796",
+    "LaThaiMinh-2A202603756",
+    "DangNhatHuy-2A202603822"
+  ],
+  "incident": "S7",
+  "decision_v1": "Tiếp tục",
+  "decision_v2": "Cải tiến thêm",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Danh sách carrier_notice_fields là đủ để hãng xử lý giao trễ; hãng không cần thêm trường nào khác.",
+    "reduce_or_prevent": "Allowlist NGĂN được việc gửi các trường ngoài danh sách đã biết, nhưng không ngăn được trường mới chưa có trong danh sách; đã kiểm trên 22 ticket bộ nền, chưa đo trên bộ lớn hơn.",
+    "measure_in_pilot": "Đo pii_leaks và carrier_extra_fields trên bộ ticket lớn hơn, và có pháp chế xác nhận căn cứ pháp lý trước Bước đánh giá 2."
   }
 }
