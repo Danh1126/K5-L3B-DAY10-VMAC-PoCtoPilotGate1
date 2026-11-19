@@ -72,10 +72,26 @@ def write_gate(ctx, action):
         payload = action.get("payload")
         if not isinstance(payload, dict):
             return Verdict.deny("thông báo hãng không có payload hợp lệ")
-        allowed_fields = set(policy["carrier_notice_fields"])
-        safe_payload = {key: value for key, value in payload.items() if key in allowed_fields}
+        order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+        if order is None or not order.get("parcels") or not isinstance(order.get("recipient"), dict):
+            return Verdict.escalate("thiếu đơn hoặc tracking để kiểm thông báo hãng")
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        if action.get("carrier_id") != parcel.get("carrier_id"):
+            return Verdict.escalate("hãng nhận thông báo không khớp tracking")
+        # Rebuild the contract payload from trusted data, including values of allowed keys.
+        canonical = {
+            "order_id": order["order_id"],
+            "parcel_id": parcel["parcel_id"],
+            "district": order["recipient"].get("district"),
+            "delay_days": H.db_delay_days(parcel, ctx.as_of),
+        }
+        allowed_fields = set(policy.get("carrier_notice_fields", ()))
+        safe_payload = {key: value for key, value in canonical.items() if key in allowed_fields}
+        removed_fields = sorted(set(payload) - set(safe_payload))
+        if removed_fields:
+            ctx.log("carrier_notice_removed_fields", fields=removed_fields)
         if safe_payload != payload:
-            return Verdict.modify("chỉ gửi các trường chính sách cho phép tới hãng",
+            return Verdict.modify("chỉ gửi trường được phép với giá trị đối chiếu từ DB",
                                   payload=safe_payload)
 
     return Verdict.allow()
