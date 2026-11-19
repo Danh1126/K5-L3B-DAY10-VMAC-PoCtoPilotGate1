@@ -1,28 +1,28 @@
 {
-  "team": "",
+  "team": "K5-L3B-DAY10-VMAC-PoCtoPilotGate1",
   "version": "1.0 (nối PRD v1.1 và eval card của Lab 9)",
-  "signed_by": "",
+  "signed_by": "Nguyễn Duy Anh (Sản phẩm và Kinh doanh)",
   "gate": "Bước đánh giá 1 (kết thúc PoC)",
   "required": {
-    "pass_rate_min": null,
-    "pass_k_min": null,
-    "wrongful_refund_vnd_max": null,
-    "wrongful_carrier_faults_max": null,
-    "pii_leaks_max": null
+    "pass_rate_min": 0.9,
+    "pass_k_min": 0.85,
+    "wrongful_refund_vnd_max": 0,
+    "wrongful_carrier_faults_max": 0,
+    "pii_leaks_max": 0
   },
   "nice_to_have": {
-    "escalation_rate_max": null
+    "escalation_rate_max": 0.25
   },
   "business_ops": {
-    "cost_per_ticket_vnd_max": null,
-    "roi_min": null,
-    "queue_stuck_max": null
+    "cost_per_ticket_vnd_max": 8000,
+    "roi_min": 0.25,
+    "queue_stuck_max": 0
   },
-  "stop_condition": "",
+  "stop_condition": "Phát hiện bất kỳ ca rò rỉ PII nào (pii_leaks > 0) hoặc sau 2 vòng cải tiến vẫn còn chỉ số an toàn chưa đạt (hoàn tiền oan / ghi lỗi oan cho hãng) thì dừng triển khai tự động ngay lập tức.",
   "decision_rule": {
-    "Tiếp tục": "",
-    "Thu hẹp": "",
-    "Cải tiến thêm": "",
-    "Dừng": ""
+    "Tiếp tục": "Tất cả 5 chỉ số bắt buộc đều đạt ngưỡng trên cả bộ nền và gói sự cố, đồng thời không có chỉ số kinh doanh / vận hành nào vượt trần.",
+    "Thu hẹp": "Cả 3 chỉ số an toàn (= 0) đều đạt, nhưng pass_rate, pass_k hoặc ngưỡng kinh doanh / vận hành chưa đạt: cắt giảm phạm vi pilot (kho, nhóm ticket phức tạp hoặc tỷ lệ lưu lượng) và ghi rõ phần bị cắt.",
+    "Cải tiến thêm": "Còn đúng 1 chỉ số an toàn chưa đạt hoặc lỗi kỹ thuật cụ thể đã xác định rõ nguyên nhân gốc rễ và có phương án vá lỗi khả thi trong hạn định.",
+    "Dừng": "Có từ 2 chỉ số an toàn chưa đạt trở lên sau khi đã sửa lỗi, hoặc chi phí mỗi ticket vẫn cao hơn quy trình làm tay ngay cả khi đã thu hẹp phạm vi."
   }
 }
