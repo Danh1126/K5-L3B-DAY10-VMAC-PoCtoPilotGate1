@@ -24,20 +24,28 @@ Ghi `members` trong `submission/submission.json` theo dạng `"HoVaTen-MSSV"`, k
 
 Mỗi thành viên tự viết một mục bên dưới (chép mẫu, đổi tiêu đề thành họ tên không dấu và MSSV, ví dụ `## NguyenVanAn-20241234`).
 
-## HoVaTen-MSSV
+## LaThaiMinh-2A202603756
 
 ### Phần việc phụ trách
 
-Vai trong bàn; câu nào của đề, mục nào của phiếu A/B/C, file nào (`lab10/guards.py`, `config/operating_gates.json`, …).
+- Vai **Kỹ sư cổng**: đo bộ nền, đọc trace và đối chiếu hành động ghi với dữ liệu đơn hàng, tracking, chính sách.
+- Phiếu B: cung cấp bằng chứng kỹ thuật cho B0–B2, triển khai cổng B7.1, kiểm tra tránh học thuộc bộ thử và ticket hiểm ở B7.2–B7.3; bàn giao số liệu cổng vòng 1 cho B8.
+- Phiếu C, thẻ S7: phân tích lỗi ở C2, sửa cổng và ghi bảng sửa C7, xây chỉ số theo dõi C8. File phụ trách: [`lab10/guards.py`](lab10/guards.py) và [`lab10/monitors.py`](lab10/monitors.py).
 
 ### Đóng góp cụ thể
 
-...
+- Viết các nhánh `write_gate` kiểm tiền hoàn, lỗi ghi cho hãng và dữ liệu gửi hãng theo tracking, chính sách hiệu lực. Cùng bàn chốt bản cổng vòng 1 trước khi nhận thẻ S7.
+- Dò các ca `S7-01@11`, `S7-04@11`, `S7-20@11`: phát hiện `customer_note` đưa thông tin cá nhân từ ticket ra hãng và `recipient_contact` lấy tên, SĐT người nhận từ DB dù ticket không chứa thông tin này.
+- Sửa nhánh `notify_carrier` trong `write_gate`: xác minh đúng hãng, dựng lại bốn giá trị được phép từ order/tracking, gỡ các trường ngoài hợp đồng và ghi sự kiện các trường đã gỡ.
+- Sửa monitor kiểm payload thực gửi để đọc `events`; thêm `recipient_contact_block_rate` đo tỷ lệ ticket mà cổng phải gỡ thông tin liên hệ người nhận. Kiểm lại S7 và bộ nền sau sửa.
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+- Commit `e20546b` chốt bản cổng vòng 1 và Phiếu B; hash checkpoint `78a12654`. Xem [`lab10/guards_round1.py`](lab10/guards_round1.py) và [`config/round1.lock`](config/round1.lock).
+- Bộ nền: `R-base-before-20261119-154520-bde05c` (109/110 trial đạt) và `R-base-prepared-20261119-172718-4676fa` (110/110 trial đạt). Số liệu ghi tại [Phiếu B B0](templates/form-b-evaluation-gates.md#b0) và [B7](templates/form-b-evaluation-gates.md#b7).
+- S7 sau sửa: [`R-S7-grade-20261119-210956-4e5132`](runs/R-S7-grade-20261119-210956-4e5132.md) tự kiểm `PASS-VISIBLE`; `pii_leaks` 30 → 0, bộ nền không có ca mới hỏng, monitor `recipient_contact_block_rate` trên nền `0.0` và S7 `0.25`. Chi tiết ở [Phiếu C C2](templates/form-c-incident.md#c2), [C7](templates/form-c-incident.md#c7), [C8](templates/form-c-incident.md#c8). Bản sửa vòng 2 hiện có trong working tree, chưa có commit riêng.
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+- **Học được:** Allowlist tên trường chưa đủ; cổng cần đối chiếu cả giá trị và đích nhận với nguồn dữ liệu đáng tin, đồng thời log lần can thiệp để theo dõi lỗi chìm.
+- **Còn chưa chắc:** Kết quả tự kiểm trên gói S7 nhìn thấy chưa chứng minh sẽ qua test ẩn; nếu dữ liệu order/tracking hoặc chính sách nguồn sai, cổng vẫn cần cơ chế phát hiện và xử lý vận hành.
