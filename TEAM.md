@@ -49,3 +49,33 @@ Mỗi thành viên tự viết một mục bên dưới (chép mẫu, đổi ti�
 
 - **Học được:** Allowlist tên trường chưa đủ; cổng cần đối chiếu cả giá trị và đích nhận với nguồn dữ liệu đáng tin, đồng thời log lần can thiệp để theo dõi lỗi chìm.
 - **Còn chưa chắc:** Kết quả tự kiểm trên gói S7 nhìn thấy chưa chứng minh sẽ qua test ẩn; nếu dữ liệu order/tracking hoặc chính sách nguồn sai, cổng vẫn cần cơ chế phát hiện và xử lý vận hành.
+  
+## DangNhatHuy-2A202603822
+
+### Phần việc phụ trách
+
+- Vai **Vận hành và pháp lý**: người duyệt, người chịu trách nhiệm, điều kiện dừng, dữ liệu cá nhân gửi bên thứ ba, runbook và bài nộp.
+- Phiếu B: câu 2.4 (B4 HAZOP phần ngoài kỹ thuật, B5 checklist 9 nhóm dòng 7–8), B6 dòng lăng kính "Con người và vận hành", câu 2.10 (B7.5 runbook phần 1–3, B7.6 giờ cao điểm).
+- Phiếu C, thẻ S7: C2, C3.3, C4 (đối chiếu với bản của đồng đội), C10 risk register, C11 checklist và runbook phần 4–5, C12 phần vận hành.
+- File phụ trách: [`config/operating_gates.json`](config/operating_gates.json) (mục `operations` và `legal`) và [`submission/submission.json`](submission/submission.json).
+
+### Đóng góp cụ thể
+
+- Điền mục `operations` (PIC, người duyệt, công suất duyệt, thời gian chờ tối đa, điều kiện dừng, kênh báo tin) và `legal` (`pii_fields_blocked_to_third_party`, `carrier_fault_requires_recorded_cause`); kiểm bằng `lab10.ops.problems()` trả về rỗng.
+- Viết runbook phần 1–3 và giờ cao điểm, mọi con số khớp `data/world.json` (`ops_limits`, `ops_facts`): SLA 60 phút, 6 ca mỗi giờ mỗi người duyệt, trần 2.000.000đ mỗi ngày.
+- Dò trace thẻ S7 (`S7-01`, `S7-04`, `S7-20`, `S7-21`, đối chứng `S7-05`) để viết bảng soát lỗi, hiệu chỉnh lòng tin và HAZOP của thẻ.
+- Viết risk register C10, cập nhật checklist C11, runbook phần 4–5 và phần vận hành của C12 (đề xuất **Cải tiến thêm** cho v2, chờ cả bàn chốt).
+- Điền `submission/submission.json` (`team`, `members`, `incident`, `decision_v1`, `decision_v2`, `three_lines`).
+- Gộp nhánh: fetch `origin/main`, giải quyết xung đột ở Phiếu C bằng cách giữ phần đồng đội đã viết và chỉ áp lại phần còn trống.
+
+### Bằng chứng
+
+- Commit `9d637dd` (Phiếu C: C10, C11, runbook 4–5, C12; `submission.json`) và merge `b4f4683`.
+- Report tự kiểm S7 dùng khi viết C11, C12: `R-S7-grade-20261119-172132-b3dc2e` (integrity, criteria, visible, regression ✅; monitor ❌ lúc đó vì chưa có chỉ số mới).
+- Dòng trong phiếu: B4 (bảng ngoài kỹ thuật), B5 dòng 7–8, B7.5, B7.6, C10, C11, C12.
+- Dùng AI: Claude hỗ trợ đọc code và trace, soạn nháp các mục trên và xử lý git. Các con số và quyết định đã được nhóm xem lại.
+
+### Exit ticket
+
+- **Học được:** Cổng pháp lý chỉ có tác dụng khi bật trong config và khớp với cổng trong code; con số vận hành phải dẫn về `ops_limits`, `ops_facts` mới giải thích được lúc demo.
+- **Còn chưa chắc:** Các ngưỡng vàng, đỏ và 15 phút LLM lỗi là đề xuất chưa đo trên lượng ticket thật; chưa có căn cứ pháp lý do Pháp chế xác nhận.
