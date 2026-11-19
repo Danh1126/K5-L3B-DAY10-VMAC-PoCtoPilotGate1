@@ -39,4 +39,43 @@ def pre_guard(ctx):
 
 def write_gate(ctx, action):
     # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
+    tool = action.get("tool")
+
+    if tool == "issue_refund":
+        order = ctx.tools.lookup_order(action.get("order_id"))
+        policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+        if order is None or policy is None or not order.get("parcels"):
+            return Verdict.escalate("thiếu đơn, kiện hoặc chính sách hiệu lực để kiểm tiền hoàn")
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        delay = H.db_delay_days(parcel, ctx.as_of)
+        allowed = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
+        if action.get("amount_vnd") != allowed:
+            return Verdict.escalate("tiền hoàn đề xuất không khớp tracking và chính sách")
+
+    if tool == "file_carrier_fault":
+        order = ctx.tools.lookup_order(action.get("order_id"))
+        policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+        if order is None or policy is None or not order.get("parcels"):
+            return Verdict.deny("không đủ dữ liệu xác minh lỗi hãng")
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        delay = H.db_delay_days(parcel, ctx.as_of)
+        if (not H.carrier_at_fault(policy, parcel, delay)
+                or action.get("parcel_id") != parcel.get("parcel_id")
+                or action.get("carrier_id") != parcel.get("carrier_id")
+                or action.get("delay_days") != delay):
+            return Verdict.deny("lỗi hãng không khớp kiện, hãng hoặc độ trễ trong tracking")
+
+    if tool == "notify_carrier":
+        policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+        if policy is None:
+            return Verdict.escalate("không có chính sách hiệu lực cho dữ liệu gửi hãng")
+        payload = action.get("payload")
+        if not isinstance(payload, dict):
+            return Verdict.deny("thông báo hãng không có payload hợp lệ")
+        allowed_fields = set(policy["carrier_notice_fields"])
+        safe_payload = {key: value for key, value in payload.items() if key in allowed_fields}
+        if safe_payload != payload:
+            return Verdict.modify("chỉ gửi các trường chính sách cho phép tới hãng",
+                                  payload=safe_payload)
+
     return Verdict.allow()
