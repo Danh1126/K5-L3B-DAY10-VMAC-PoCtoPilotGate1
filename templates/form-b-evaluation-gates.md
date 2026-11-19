@@ -188,8 +188,10 @@ Không bắt buộc điền đủ năm dòng. Bắt buộc: **ít nhất ba dòn
 
 | Thành phần | Guideword | Lệch cụ thể | Hậu quả, cho ai | Cổng đề xuất: code hay con số nào trong `config/operating_gates.json` |
 |---|---|---|---|---|
-| | | | | |
-| | | | | |
+| Ngân sách (kinh doanh) | WRONG | Tổng hoàn tự động trong ngày vượt ngân sách Finance mà không ai được báo | Finance mất tiền ngoài ngân sách; người chịu là NV-HANH (người duyệt vượt hạn mức) | `business.daily_refund_cap_vnd` (số do Sản phẩm và kinh doanh điền); cổng `write_gate` chuyển người duyệt khi vượt trần |
+| Người duyệt (vận hành) | INCAPABLE | Chỉ một người trực, ticket chuyển tới nhiều hơn 6 ca mỗi giờ thì ca cuối chờ quá 60 phút | Khách chờ, vi phạm SLA 60 phút; người chịu là NV-HANH | `operations.reviewers_on_shift`, `operations.max_queue_wait_minutes` (khớp `queue_stuck_max` đã ký) |
+| Dữ liệu gửi bên thứ ba (pháp lý) | PERTURBED | Thông tin cá nhân của người khác (tên, số điện thoại) có trong nội dung khách gõ bị chép sang hãng hoặc shop | Lộ dữ liệu cá nhân cho bên thứ ba; người chịu là NV-OANH (đối soát hãng và shop) | `legal.pii_fields_blocked_to_third_party` (danh sách trường chờ bản đồ dữ liệu B3); chỉ số `pii_leaks` |
+| Ghi lỗi cho hãng (pháp lý) | INCOMPLETE | Ghi lỗi cho hãng mà thiếu nguyên nhân được ghi lại | Tài xế bị phạt oan; ví dụ DNB: 80.000đ mỗi lần, đình chỉ sau 3 lần trong 7 ngày; người chịu là NV-OANH | `legal.carrier_fault_requires_recorded_cause`; `ops_limits.max_auto_strikes_per_carrier_per_day` = 2 |
 
 **Ví dụ mẫu (`issue_refund`, đừng chép):** tham số `amount_vnd` · WRONG · số tiền tính từ số ngày khách tự khai · LogiX mất
 tiền, hãng bị kéo theo một lỗi · hiện chỉ có trần "không vượt tổng tiền đơn" · cổng ghi so với quyền lợi tính từ DB (chặn).
