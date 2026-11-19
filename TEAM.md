@@ -5,7 +5,7 @@
 - Tên nhóm (`TenNhom`, không dấu, không khoảng trắng): VMAC
 - Lớp: `L3B`
 - Repo của bàn: `https://github.com/Danh1126/K5-L3B-DAY10-VMAC-PoCtoPilotGate1`
-- Thẻ sự cố đã bốc (S1–S8):
+- Thẻ sự cố đã bốc (S1–S8): S7
 
 ## Thành viên
 
@@ -15,7 +15,7 @@ Họ tên đầy đủ và MSSV của **mọi** thành viên; bàn 3 người th
 | --: | --------- | ---- | --- | :---------: |
 |   1 | Nguyễn Duy Anh | 2A202603796 | Sản phẩm và kinh doanh | X |
 |   2 | Lã Thái Minh | 2A202603756 | Kỹ sư cổng |  |
-|   3 | Đặng Nhật Huy | 2A202603822 | Vận hành và pháp lý  |             |
+|   3 | Đặng Nhật Huy | 2A202603822 | Vận hành và pháp lý  |  |
 |   4 |           |      |     |             |
 
 Ghi `members` trong `submission/submission.json` theo dạng `"HoVaTen-MSSV"`, khớp bảng trên.
@@ -79,3 +79,30 @@ Mỗi thành viên tự viết một mục bên dưới (chép mẫu, đổi ti�
 
 - **Học được:** Cổng pháp lý chỉ có tác dụng khi bật trong config và khớp với cổng trong code; con số vận hành phải dẫn về `ops_limits`, `ops_facts` mới giải thích được lúc demo.
 - **Còn chưa chắc:** Các ngưỡng vàng, đỏ và 15 phút LLM lỗi là đề xuất chưa đo trên lượng ticket thật; chưa có căn cứ pháp lý do Pháp chế xác nhận.
+
+
+## NguyenDuyAnh - 2A202603796
+
+### Phần việc phụ trách
+
+- Vai **Kiến trúc sư vận hành & Quản trị rủi ro / Điều phối Gate 1**: thiết kế tiêu chí nghiệm thu, bản đồ dữ liệu nguồn sự thật, phân tích failure mode và điều hành quy trình ra quyết định go/no-go giữa các vòng.
+- Phiếu B (Vòng 1): xây dựng tiêu chí pass/fail, bản đồ dữ liệu và phân tích HAZOP vòng 1 (B3–B6); đánh giá chi phí–ROI, đối chiếu trạng thái sẵn sàng pilot và chốt quyết định vòng 1 tại B8 (`Tiếp tục`).
+- Phiếu C (Vòng 2 – thẻ S7): tổng hợp kết quả tự kiểm và đối chiếu pre-mortem (C1), hiệu chỉnh lòng tin giữa người đặt và người nhận quà (C3.3), xây dựng HAZOP sự cố (C4), đặc tả specification và giả định môi trường (C5), phân tích cây lỗi fault tree trước và sau sửa (C6–C7), đồng thời thiết kế kịch bản ứng phó vận hành và sổ đăng ký rủi ro (C9–C12). File phụ trách: [`templates/form-b-evaluation-gates.md`](templates/form-b-evaluation-gates.md) và [`templates/form-c-incident.md`](templates/form-c-incident.md).
+
+### Đóng góp cụ thể
+
+- Thiết lập khung tiêu chí nghiệm thu Gate 1 (`pass_rate = 1.0`, `pii_leaks = 0`, kiểm soát chi phí ~4,293 VND và ROI ~1.33) cùng bảng phân quyền nguồn sự thật cho các thực thể đơn hàng, tracking và chính sách hiệu lực.
+- Phân tích hiệu chỉnh lòng tin (C3.3) và bản chất lỗi chìm trên sự cố S7: làm rõ sự lệch pha giữa nhận thức của người đặt quà (`customer_note`) và người nhận quà (`orders[].recipient`) với hành vi tự động đẩy dữ liệu ra bên thứ ba (`notify_carrier`), chỉ ra cơ chế lọc danh sách trắng 4 trường (`order_id`, `parcel_id`, `district`, `delay_days`) là biện pháp bảo đảm không lộ thay vì chỉ che mờ ký tự.
+- Xây dựng cây lỗi Fault Tree (C6) từ tác hại đỉnh (`pii_leaks = 30` ở gói S7 nền) ngược về 3 nhánh nguyên nhân độc lập ở các tầng đầu vào (`customer_note`), dữ liệu (`orders[].recipient`) và vận hành đối tác; liên kết từng lá với specification bị vi phạm và giả định môi trường sai thực tế.
+- Hoàn thiện quy trình ứng phó sự cố (runbook) và sổ đăng ký rủi ro còn lại cho giai đoạn vận hành pilot thực tế (tình huống chính sách nguồn thiếu trường hợp đồng hoặc hãng vận chuyển thay đổi giao thức đối soát).
+
+### Bằng chứng
+
+- Bản chốt vòng 1 tại commit `e20546b` (checkpoint hash `78a12654`, [`config/round1.lock`](config/round1.lock)) và nội dung đầy đủ tại [Phiếu B](templates/form-b-evaluation-gates.md) (B3–B6, B8).
+- Kết quả đối chiếu trước và sau sửa trên gói sự cố S7: từ lần chạy nền `pii_leaks = 30` về `pii_leaks = 0` tại [`R-S7-grade-20261119-210956-4e5132`](runs/R-S7-grade-20261119-210956-4e5132.md) (`PASS-VISIBLE`), giữ nguyên độ ổn định bộ nền 110/110 ca đạt (`R-base-prepared-20261119-172718-4676fa`).
+- Các phân tích chi tiết được ghi nhận tại [Phiếu C C1](templates/form-c-incident.md#c1), [C3.3](templates/form-c-incident.md#c33), [C4](templates/form-c-incident.md#c4), [C5](templates/form-c-incident.md#c5) và [C6](templates/form-c-incident.md#c6).
+
+### Exit ticket
+
+- **Học được:** Trước đây mình cứ nghĩ AI chạy xong không báo lỗi, trả lời đúng là đạt rồi, nhưng qua bài này mới thấy có những lỗi "chìm" như gửi nhầm SĐT và địa chỉ người nhận quà sang cho hãng vận chuyển — hệ thống vẫn chạy êm ru nhưng ngoài đời lại thành vi phạm quyền riêng tư. Mình cũng hiểu ra là không thể chỉ nhắc khéo model trong prompt được, mà phải chặn cứng bằng luật ở code (chỉ cho phép gửi đúng 4 trường đã thỏa thuận) và kiểm tra lại những điều mình hay mặc định sai về người dùng ngoài đời.
+- **Còn chưa chắc:** Vẫn hơi băn khoăn là khi mang ra chạy thật ngoài pilot, nếu bản tin gửi hãng chỉ có mã đơn với tên quận mà thiếu SĐT người nhận thì các bác tài xế giao hàng có gặp khó khăn không. Nếu hãng than phiền khó giao lại, không biết bên vận hành có bị áp lực phải mở thêm trường thông tin hay tìm cách lách cổng hay không.

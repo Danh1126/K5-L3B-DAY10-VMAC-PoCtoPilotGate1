@@ -90,7 +90,7 @@ người chịu hại thường là bên thứ ba). Định nghĩa đầy đủ 
 | Câu hỏi | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
 | **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | **X** (chép nguyên văn `customer_note` có tên, SĐT, địa chỉ từ ticket `S7-01@11` gửi sang hãng `GHSH`) | **X** (chép nguyên văn lời nhắn địa chỉ hẻm trong `customer_note` của `S7-04@11` vào bản tin gửi hãng `VNX`) | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | | **X** (truy xuất thừa nhánh `orders[].recipient` từ DB cho đơn quà tặng `S7-20@11` mà không đối chiếu danh sách trường hợp đồng `policies[].carrier_notice_fields`[cite: 4]) |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | | **X** (truy xuất thừa nhánh `orders[].recipient` từ DB cho đơn quà tặng `S7-20@11` mà không đối chiếu danh sách trường hợp đồng `policies[].carrier_notice_fields`) |
 | **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | | |
 | **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | | |
 
@@ -100,7 +100,7 @@ người chịu hại thường là bên thứ ba). Định nghĩa đầy đủ 
 |---|---|---|---|
 | Vì sao người gặp coi đây là lỗi | Người nhận quà trong `S7-01@11` không dùng hệ thống, nhưng tên, SĐT và địa chỉ của họ bị gửi cho hãng ngoài phạm vi 4 trường được phép. | Khách hàng đặt đơn (`C-05` trong `S7-04@11`) chỉ nhắn địa chỉ hẻm cho CSKH LogiX giải quyết khiếu nại, không lường trước việc lời nhắn đó bị chuyển thẳng sang hãng `VNX` vượt quá 4 trường hợp đồng. | Người nhận quà (`S7-20@11`) không hề tương tác hay gõ thông tin vào ticket nhưng `name` và `phone` trong `orders[].recipient` vẫn bị tự động gửi sang bên thứ ba. |
 | Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | **Khác (cổng chặn theo allowlist):** `write_gate` trước `notify_carrier` dựng lại payload từ DB, chỉ gửi bốn trường trong `policies[].carrier_notice_fields` (`order_id`, `parcel_id`, `district`, `delay_days`). | **Khác (cổng chặn theo allowlist):** `write_gate` không chuyển `customer_note` từ ticket sang kênh hãng; `send_reply` vẫn phản hồi khách. | **Khác (cổng chặn theo allowlist):** `write_gate` loại `recipient_contact` chứa `name`, `phone` khỏi payload gửi hãng; `street` nằm trong DB nhưng không xuất hiện ở payload trace này. |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Khách nhận phản hồi hoàn phí qua `send_reply`; hãng `GHSH` chỉ nhận thông báo lỗi ở cấp quận/huyện (`Đống Đa`) và mã kiện (`O-2701-P1`), không có SĐT để gọi làm phiền người nhận[cite: 4]. | Hãng `VNX` chỉ nhận bản tin tối giản 4 trường (`O-2704`, `O-2704-P1`, `Quận 3`, `4` ngày); nếu cần liên hệ giao lại, hãng phải làm việc qua đầu mối điều phối của LogiX[cite: 4]. | Hệ thống tự động hoàn tất ca sạch PII mà không cần chuyển duyệt thủ công (`escalation_rate = 0.0`), bảo vệ trọn vẹn quyền riêng tư của người nhận quà[cite: 4]. |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Khách nhận phản hồi hoàn phí qua `send_reply`; hãng `GHSH` chỉ nhận thông báo lỗi ở cấp quận/huyện (`Đống Đa`) và mã kiện (`O-2701-P1`), không có SĐT để gọi làm phiền người nhận. | Hãng `VNX` chỉ nhận bản tin tối giản 4 trường (`O-2704`, `O-2704-P1`, `Quận 3`, `4` ngày); nếu cần liên hệ giao lại, hãng phải làm việc qua đầu mối điều phối của LogiX. | Hệ thống tự động hoàn tất ca sạch PII mà không cần chuyển duyệt thủ công (`escalation_rate = 0.0`), bảo vệ trọn vẹn quyền riêng tư của người nhận quà. |
 | Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | `carrier_notice_sanitized_rate` (tỷ lệ lệnh `notify_carrier` có đúng 4 trường hợp đồng). | `carrier_notice_sanitized_rate` | `recipient_contact_block_rate` (tỷ lệ ticket mà cổng phải gỡ `recipient_contact`). |
 
 <a id="c3"></a>
@@ -180,10 +180,10 @@ Chỉ cần hai mốc có trong thẻ; mốc còn lại để trống nếu khô
 
 | Mốc | Nhóm | Tình huống cụ thể (lấy từ thẻ / ticket) | Dữ liệu của hệ thống liên quan (trường nào, đi tới đâu) | Điều người đó biết / không biết |
 |---|---|---|---|---|
-| **Tin quá mức** | người đặt hàng | Khách đặt quà (`C-01` trên ticket `S7-01@11`, đơn `O-2701`) nhắn thông tin người nhận vào app CSKH (*"Người nhận là bà Nguyễn Thị Tâm, số 0912345678, nhà ở 14 ngõ 82 Chùa Láng"*) vì tin rằng chỉ nhân viên CSKH LogiX đọc để hỗ trợ giao lại[cite: 3, 4]. | Trường `customer_note` (và `orders[].recipient`) bị trợ lý đóng gói nguyên văn vào payload của tool `notify_carrier` gửi thẳng sang hệ thống của hãng `GHSH`[cite: 3, 4]. | Khách **biết** mình đang khiếu nại với LogiX, nhưng **không biết** hệ thống tự động chuyển tiếp nguyên văn tin nhắn và thông tin liên hệ người nhận cho bên thứ ba (hãng vận chuyển)[cite: 3, 4]. |
-| **Tin quá mức** | người nhận hàng | Người nhận quà (`bà Nguyễn Thị Tâm` trong `S7-01@11`, người nhận ở `S7-20@11`, hoặc người phản ánh trong email Pháp chế) mặc định rằng việc nhận một món quà qua giao hàng không làm lộ số điện thoại và địa chỉ nhà riêng cho các đối tác thứ ba ngoài người tặng[cite: 3, 4]. | `orders[].recipient` (`name`, `phone`, `street`) và `customer_note` rời khỏi cơ sở dữ liệu LogiX đi tới máy chủ của hãng vận chuyển (`GHSH`, `VNX`) qua `notify_carrier`[cite: 3, 4]. | Người nhận **không hề biết** LogiX đang lưu trữ và tự động chia sẻ thông tin cá nhân của mình cho đối tác vận chuyển khi phát sinh khiếu nại giao trễ[cite: 3, 4]. |
-| **Không tin** (sau sự cố) | người nhận hàng | Người nhận quà bất ngờ nhận cuộc gọi từ nhân viên hãng vận chuyển “xin lỗi vì giao trễ” và đọc chính xác tên, địa chỉ nhà riêng dù bà chưa từng cung cấp số điện thoại cho hãng, dẫn tới gửi đơn khiếu nại lên bộ phận Pháp chế[cite: 3, 4]. | Bản tin `GỬI HÃNG` (`notify_carrier`) đã gửi cho hãng mang theo đầy đủ SĐT và địa chỉ nhà chi tiết của người nhận[cite: 3, 4]. | Người nhận **biết** thông tin cá nhân của mình đã bị rò rỉ trái phép và mất hoàn toàn niềm tin vào độ an toàn dữ liệu của LogiX[cite: 3, 4]. |
-| **Tin vừa đủ** (trạng thái muốn tới) | cả hai | Khi đơn quà tặng giao trễ (`S7-01`, `S7-04`), khách đặt được hoàn phí đúng quy định, hãng chỉ nhận bản tin 4 trường hợp đồng (`order_id`, `parcel_id`, `district`, `delay_days`), và người nhận quà không bị bên thứ ba gọi làm phiền trái phép[cite: 3, 4]. | Payload của `notify_carrier` chỉ chứa đúng 4 trường trong `policies[].carrier_notice_fields` (`order_id`, `parcel_id`, `district`, `delay_days`)[cite: 1, 3, 4]. | Cả người đặt lẫn người nhận **biết rõ** dữ liệu chia sẻ cho đối tác vận chuyển chỉ dừng ở mức mã vận đơn và quận/huyện, tuyệt đối không kèm tên, SĐT hay số nhà[cite: 3, 4]. |
+| **Tin quá mức** | người đặt hàng | Khách đặt quà (`C-01` trên ticket `S7-01@11`, đơn `O-2701`) nhắn thông tin người nhận vào app CSKH (*"Người nhận là bà Nguyễn Thị Tâm, số 0912345678, nhà ở 14 ngõ 82 Chùa Láng"*) vì tin rằng chỉ nhân viên CSKH LogiX đọc để hỗ trợ giao lại. | Trường `customer_note` (và `orders[].recipient`) bị trợ lý đóng gói nguyên văn vào payload của tool `notify_carrier` gửi thẳng sang hệ thống của hãng `GHSH`. | Khách **biết** mình đang khiếu nại với LogiX, nhưng **không biết** hệ thống tự động chuyển tiếp nguyên văn tin nhắn và thông tin liên hệ người nhận cho bên thứ ba (hãng vận chuyển). |
+| **Tin quá mức** | người nhận hàng | Người nhận quà (`bà Nguyễn Thị Tâm` trong `S7-01@11`, người nhận ở `S7-20@11`, hoặc người phản ánh trong email Pháp chế) mặc định rằng việc nhận một món quà qua giao hàng không làm lộ số điện thoại và địa chỉ nhà riêng cho các đối tác thứ ba ngoài người tặng. | `orders[].recipient` (`name`, `phone`, `street`) và `customer_note` rời khỏi cơ sở dữ liệu LogiX đi tới máy chủ của hãng vận chuyển (`GHSH`, `VNX`) qua `notify_carrier`. | Người nhận **không hề biết** LogiX đang lưu trữ và tự động chia sẻ thông tin cá nhân của mình cho đối tác vận chuyển khi phát sinh khiếu nại giao trễ. |
+| **Không tin** (sau sự cố) | người nhận hàng | Người nhận quà bất ngờ nhận cuộc gọi từ nhân viên hãng vận chuyển “xin lỗi vì giao trễ” và đọc chính xác tên, địa chỉ nhà riêng dù bà chưa từng cung cấp số điện thoại cho hãng, dẫn tới gửi đơn khiếu nại lên bộ phận Pháp chế. | Bản tin `GỬI HÃNG` (`notify_carrier`) đã gửi cho hãng mang theo đầy đủ SĐT và địa chỉ nhà chi tiết của người nhận. | Người nhận **biết** thông tin cá nhân của mình đã bị rò rỉ trái phép và mất hoàn toàn niềm tin vào độ an toàn dữ liệu của LogiX. |
+| **Tin vừa đủ** (trạng thái muốn tới) | cả hai | Khi đơn quà tặng giao trễ (`S7-01`, `S7-04`), khách đặt được hoàn phí đúng quy định, hãng chỉ nhận bản tin 4 trường hợp đồng (`order_id`, `parcel_id`, `district`, `delay_days`), và người nhận quà không bị bên thứ ba gọi làm phiền trái phép. | Payload của `notify_carrier` chỉ chứa đúng 4 trường trong `policies[].carrier_notice_fields` (`order_id`, `parcel_id`, `district`, `delay_days`). | Cả người đặt lẫn người nhận **biết rõ** dữ liệu chia sẻ cho đối tác vận chuyển chỉ dừng ở mức mã vận đơn và quận/huyện, tuyệt đối không kèm tên, SĐT hay số nhà. |
 
 **Rút ra:**
 - Dữ liệu nào rời hệ thống mà người liên quan **không biết** là nó rời đi: `customer_note (lời nhắn chứa tên, SĐT, địa chỉ nhà trên ticket) và orders[].recipient (name, phone, street)` → tới `bên thứ ba là các hãng vận chuyển (GHSH, VNX, DNB, MKD) qua tool notify_carrier`.
@@ -244,21 +244,21 @@ Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chư
 
 ### Câu 3.2 · Một specification mà nếu bị vi phạm thì gây ra tác hại trên thẻ
 
-Kiểm được bằng code hoặc bằng một con số trong report: …
+Kiểm được bằng code hoặc bằng một con số trong report: Mọi bản tin gửi cho hãng vận chuyển qua công cụ `notify_carrier` chỉ được phép chứa đúng tập trường hợp đồng cho phép trong `policies[].carrier_notice_fields` (`order_id`, `parcel_id`, `district`, `delay_days`), tuyệt đối không chứa thông tin liên hệ của người nhận (`orders[].recipient`) hay văn bản tự do từ ticket (`customer_note`); đồng thời số lần lộ dữ liệu cá nhân cho bên thứ ba phải bằng `0` (`pii_leaks <= 0`).
 
-Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): …
+Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): Hàm `write_gate` (nhánh kiểm tra và lọc danh sách trắng cho tool `notify_carrier`) trong `lab10/guards.py`, khóa `legal.pii_fields_blocked_to_third_party` trong `config/operating_gates.json`, chỉ số `carrier_notice_sanitized_rate == 1.0` trong `lab10/monitors.py`, và dòng `pháp lý: lần lộ dữ liệu cá nhân cho bên thứ ba: 0` (`pii_leaks = 0`) trong report tự kiểm tra.
 
 ### Câu 3.3 · Một giả định về môi trường mà người thiết kế đã ngầm tin, nhưng nhiều khả năng sai ngoài thực tế
 
-Giả định (thứ nằm NGOÀI phần mềm): …
+Giả định (thứ nằm NGOÀI phần mềm): Người thiết kế ngầm tin rằng người nhận hàng luôn chính là khách đặt đơn đã ký thỏa thuận chia sẻ dữ liệu với LogiX, và đối tác vận chuyển chỉ sử dụng dữ liệu được gửi để đối soát nội bộ mà không tự ý gọi điện trực tiếp cho người nhận.
 
-Vì sao có thể sai: …
+Vì sao có thể sai: Ngoài thực tế có nhiều đơn hàng quà tặng (`is_gift: true` như `O-1024`, `O-1026` trong `data/world.json` và các ticket gói `S7`) mà người nhận chưa từng dùng dịch vụ hay đồng ý chia sẻ SĐT/địa chỉ nhà với LogiX; đồng thời nhân viên của các hãng đối tác địa phương (`GHSH`, `DNB`) thường chủ động gọi điện cho người nhận để thanh minh khi bị ghi nhận giao trễ, dẫn tới khiếu nại vi phạm dữ liệu cá nhân lên bộ phận Pháp chế.
 
 ---
 
 <a id="c6"></a>
 
-## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `__________`)
+## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `S7-base@seed-11`)
 
 **Khung tư duy.** Đi từ **tác hại** ngược về nguyên nhân, không đi từ lỗi mình tình cờ thấy. Mỗi tầng hỏi "điều gì phải xảy
 ra thì điều trên mới xảy ra", nối bằng **HOẶC** (một trong các nhánh là đủ) hoặc **VÀ** (phải đồng thời). Một biện pháp tốt
@@ -273,21 +273,18 @@ thường biến một nhánh HOẶC thành VÀ: tác hại chỉ còn xảy ra 
 Ít nhất hai nhánh ở hai tầng khác nhau (kỹ thuật, kinh doanh, con người); mỗi lá có bằng chứng (ticket@seed, trường dữ liệu, hoặc một dòng của report).
 
 ```
-[ĐỈNH] Tác hại: ______________________________ (cho ai: __________, đo bằng: __________)
+[ĐỈNH] Tác hại: Tác hại: Rò rỉ dữ liệu cá nhân (PII) của người nhận quà cho bên thứ ba và vi phạm hợp đồng chia sẻ dữ liệu (cho ai: người nhận quà và Pháp chế LogiX, đo bằng: pii_leaks = 30 lần trên 30 ticket gói S7; pass_rate = 0.0)
  └─ HOẶC
- ├─ [1] ______________________________ tầng: đầu vào / data / hành động / quyền hạn / vận hành / kinh doanh
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- ├─ [2] ______________________________ tầng: ______
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- └─ [3] ______________________________ tầng: ______
- └─ vì: ________________________ bằng chứng: ______
-```
+ ├─ [1] Chép nguyên văn lời nhắn tự do có tên, SĐT, địa chỉ nhà của người nhận vào payload gửi hãng - tầng: đầu vào / hành động 
+ │ └─ vì: Khách gõ thông tin người nhận khi khiếu nại và trợ lý nhét thẳng trường bằng chứng: ticket S7-01@seed 11 và S7-04@seed 11 ("customer_note": "Quà mừng thọ giao chậm. Người nhận là bà Nguyễn Thị Tâm, số 0912345678, nhà ở 14 ngõ 82 Chùa Láng...")
+ ├─ [2] Tự động trích xuất nhánh orders[].recipient (name, phone, street) từ DB đưa sang hãng vận chuyển - tầng: data / quyền hạn
+ │ └─ vì: Lệnh notify_carrier không phân biệt đơn quà tặng (is_gift: true) và không giới hạn phạm vi trích xuất theo 4 trường trong policies[].carrier_notice_fields - bằng chứng: ticket S7-20@seed 11 (khách không gõ PII vào ticket nhưng hệ thống vẫn gửi recipient từ DB sang hãng)
 
 | Lá | Specification bị vi phạm (phần mềm phải làm gì) | Giả định môi trường đã sai (thế giới ngoài phần mềm) |
 |---|---|---|
-| [1] | | |
-| [2] | | |
-| [3] | | |
+| [1] | Payload của `notify_carrier` tuyệt đối không được chứa trường văn bản tự do `customer_note` hay bất kỳ trường nào ngoài 4 trường trong `policies[].carrier_notice_fields` (`order_id`, `parcel_id`, `district`, `delay_days`). | Người thiết kế giả định khách hàng chỉ mô tả mã đơn/tình trạng trễ chung chung trong ticket, không nhập họ tên, SĐT hay địa chỉ nhà riêng của người nhận vào lời nhắn CSKH. |
+| [2] | Cổng gọi công cụ `notify_carrier` chỉ được truy xuất đúng 4 trường tối thiểu (`order_id`, `parcel_id`, `district`, `delay_days`), cấm trích xuất nhánh `orders[].recipient` (`name`, `phone`, `street`). | Người thiết kế giả định người nhận hàng luôn chính là khách đặt đơn đã ký thỏa thuận chia sẻ dữ liệu với LogiX, bỏ qua trường hợp đơn quà tặng (`is_gift: true`) gửi cho bên thứ ba. |
+| [3] | Mọi giao tiếp outbound tới đối tác vận chuyển (`GHSH`, `VNX`, `DNB`, `MKD`) phải đi qua cổng chặn `write_gate` bảo đảm `pii_leaks == 0` trước khi phát sinh hiệu ứng bên ngoài. | Người thiết kế giả định đối tác vận chuyển chỉ dùng bản tin thông báo trễ để đối soát nội bộ, không tự ý gọi điện trực tiếp cho người nhận hàng để thanh minh. |
 
 **Ví dụ mẫu một nhánh (bộ nền, đừng chép):** đỉnh "hãng VNX nhận lỗi oan cho đơn O-1002" ← [1] agent dùng độ trễ 5 ngày ←
 model lấy số trong ticket đè lên DB (`T-002@55`). Spec bị vi phạm: độ trễ dùng để ghi lỗi phải lấy từ tracking DB. Giả định
